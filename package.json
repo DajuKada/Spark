@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Zero5620/Spark/issues"
   },
-  "homepage": "https://github.com/Zero5620/Spark#readme"
+  "homepage": "https://github.com/Zero5620/Spark#readme",
+  "dependencies": {
+    "c-struct": "0.0.5"
+  }
 }

@@ -1,3 +1,5 @@
+npm install fs
+npm install c-struct --save
 npm install bufferutil
 npm install hammerandchisel/erlpack
 npm install sodium
