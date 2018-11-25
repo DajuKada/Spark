@@ -1,0 +1,19 @@
+{
+  "name": "spark",
+  "version": "1.0.0",
+  "description": "A Discord bot",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zero5620/Spark.git"
+  },
+  "author": "Zero",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Zero5620/Spark/issues"
+  },
+  "homepage": "https://github.com/Zero5620/Spark#readme"
+}
