@@ -2,6 +2,7 @@
 
 ## Requirement
 - [Node JS](https://nodejs.org/en/)
+- [FFMPEG](https://www.ffmpeg.org/)
 
 ## Library
 - [Discord JS](https://discord.js.org/)
