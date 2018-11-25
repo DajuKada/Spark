@@ -9,6 +9,10 @@ function Process(Message, Args) {
     }
 }
 
+function HelpMessage(Args) {
+    return 'This is help for sudo command';
+}
+
 function Close() {
     return true;
 }
@@ -20,6 +24,7 @@ module.exports = {
             signature: 'sudo',
             call: Process,
             close: Close,
+            help: HelpMessage,
             description: 'sudo command is for sudo users'
         };
     }

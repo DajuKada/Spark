@@ -3,6 +3,7 @@ const DISCORD = require('discord.js');
 // Import modules
 const SUDO = require('./modules/sudo');
 const PING = require('./modules/ping');
+const MUSIC = require('./modules/music');
 
 var MESSAGE = DISCORD.Message;
 var CommandPrefix = '';
@@ -16,6 +17,7 @@ var Modules = [];
 function LoadModules() {
     RegisterLoadedModule(PING.Load());
     RegisterLoadedModule(SUDO.Load());
+    RegisterLoadedModule(MUSIC.Load());
 }
 
 function RegisterLoadedModule(module) {
@@ -49,8 +51,28 @@ function CloseModules() {
 // Handles calling to other modules according to the command typed
 //
 function ProcessBotCommand(Message) {
-    
+
     var args = Message.content.substring(1).split(' ');
+
+    // Help commands
+    if (args[0] == 'help') {
+        let help_msg = 'Module could not be found. Type `!help` to get a list of all modules';
+        if (args[1]) {
+            for (let i = 0; i < Modules.length; ++i) {
+                if (Modules[i].signature == args[1]) {
+                    help_msg = Modules[i].help(args);
+                    break;
+                }
+            }
+        }
+        else {
+            help_msg = GetStringOfModulesList();
+        }
+        Message.channel.send(help_msg);
+        return;
+    }
+
+    // Other modules
     for (let i = 0; i < Modules.length; ++i) {
         if (Modules[i].signature == args[0]) {
             Modules[i].call(Message, args);
@@ -59,24 +81,15 @@ function ProcessBotCommand(Message) {
     }
     Message.reply('Command not found!');
     return;
+}
 
-    if (Message.content == CommandPrefix + 'join') {
-        if (Message.member.voiceChannel) {
-            if (!Message.member.voiceChannel.joinable) {
-                Message.reply('I do not have permissions in the voice channel you connected!');
-            }
-            else {
-                Message.member.voiceChannel.join()
-                    .then(connection => console.log('Connected!'))
-                    .catch(console.error);
-                Message.reply('You are connected to music voice channel!');
-            }
-        }
-        else {
-            Message.reply('You must be connected to `music` voice channel');
-        }
-    }
-
+function GetStringOfModulesList() {
+    let module_string = '```py\n# Here are the lists of modules::\n';
+    Modules.forEach(function (m) {
+        module_string += m.signature + " = '" + m.description + "'\n";
+    });
+    module_string += '```\nType `!help <module_name>` to get help for specific module.';
+    return module_string;
 }
 
 
