@@ -2,9 +2,11 @@ const DISCORD = require('discord.js');
 
 // Import modules
 const SUDO = require('./modules/sudo');
+const PING = require('./modules/ping');
 
 var MESSAGE = DISCORD.Message;
 var CommandPrefix = '';
+var ChannelNotification = '';
 var Modules = [];
 
 //
@@ -12,6 +14,7 @@ var Modules = [];
 // Load all the module files in this function
 //
 function LoadModules() {
+    RegisterLoadedModule(PING.Load());
     RegisterLoadedModule(SUDO.Load());
 }
 
@@ -30,7 +33,15 @@ function RegisterLoadedModule(module) {
 // Save and close all the module files in this function
 //
 function CloseModules() {
-    SUDO.Close();
+    Modules.forEach(function (m) {
+        if (m.close()) {
+            console.log(m.signature + ' module has been closed');
+        }
+        else {
+            console.error(m.signature + ' module could not be closed!');
+        }
+    });
+    Modules = []; // Clear the modules array
 }
 
 //
@@ -38,24 +49,16 @@ function CloseModules() {
 // Handles calling to other modules according to the command typed
 //
 function ProcessBotCommand(Message) {
-
+    
     var args = Message.content.substring(1).split(' ');
-    switch (args[0]) {
-        case 'ping':
-            {
-                Message.reply('pong');
-            } break;
-
-        case 'sudo':
-            {
-                Modules[0].call(Message);
-            } break;
-
-        default:
-            {
-                Message.reply('Command not found');
-            }
+    for (let i = 0; i < Modules.length; ++i) {
+        if (Modules[i].signature == args[0]) {
+            Modules[i].call(Message, args);
+            return;
+        }
     }
+    Message.reply('Command not found!');
+    return;
 
     if (Message.content == CommandPrefix + 'join') {
         if (Message.member.voiceChannel) {
@@ -87,8 +90,9 @@ function ProcessXPCommand(Message) {
 
 module.exports = {
 
-    StartUp: function (prefix) {
+    StartUp: function (prefix, notification) {
         CommandPrefix = prefix;
+        ChannelNotification = notification;
         LoadModules();
     },
 
@@ -96,7 +100,7 @@ module.exports = {
      * @param {MESSAGE} Message
     */
     ProcessCommand: function (Message) {
-        if (Message.content.startsWith(CommandPrefix)) {
+        if (Message.content.startsWith(CommandPrefix) && Message.channel.id == ChannelNotification) {
             ProcessBotCommand(Message);
         }
         else {

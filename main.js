@@ -13,6 +13,7 @@ const CORE = require('./core');
 var DiscordParms = new STRUCT.Schema(
     {
         token: STRUCT.type.string(),
+        notification: STRUCT.type.string(),
         prefix: STRUCT.type.string(),
         ready: STRUCT.type.u8(0)
     }
@@ -21,6 +22,7 @@ var DiscordParms = new STRUCT.Schema(
 // Setting up configurations
 var __botConfig = JSON.parse(FS.readFileSync('config/server.json', 'utf-8'));
 DiscordParms.token = __botConfig.token;
+DiscordParms.notification = __botConfig.notification;
 DiscordParms.prefix = __botConfig.prefix;
 
 // Bot shutting down
@@ -49,7 +51,7 @@ BOT.on('ready', () => {
 
     console.log(`Logged in as ${BOT.user.tag}!`);
 
-    CORE.StartUp(DiscordParms.prefix);
+    CORE.StartUp(DiscordParms.prefix, DiscordParms.notification);
 
     // Bot is ready
     DiscordParms.ready = 1;

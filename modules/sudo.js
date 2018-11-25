@@ -1,6 +1,6 @@
 const DISCORD = require('discord.js');
 
-function Process(Message) {
+function Process(Message, Args) {
     if (Message.member.roles.find(role => role.name == 'manager')) {
         Message.reply('You can use sudo');
     }
@@ -9,18 +9,19 @@ function Process(Message) {
     }
 }
 
+function Close() {
+    return true;
+}
+
 module.exports = {
 
     Load: function () {
         return {
             signature: 'sudo',
             call: Process,
+            close: Close,
             description: 'sudo command is for sudo users'
         };
-    },
-
-    Close: function () {
-        return true;
     }
 
 }
