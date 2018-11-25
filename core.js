@@ -1,5 +1,8 @@
 const DISCORD = require('discord.js');
 
+// Import modules
+const SUDO = require('./modules/sudo');
+
 var MESSAGE = DISCORD.Message;
 var CommandPrefix = '';
 var Modules = [];
@@ -9,7 +12,17 @@ var Modules = [];
 // Load all the module files in this function
 //
 function LoadModules() {
+    RegisterLoadedModule(SUDO.Load());
+}
 
+function RegisterLoadedModule(module) {
+    Modules.forEach(function (m) {
+        if (m.signature == module.signature) {
+            console.error(module.signature + ' could not be registered, because module with same signature already exists');
+        }
+    });
+    Modules.push(module);
+    console.log(module.signature + ' has been registered');
 }
 
 //
@@ -17,7 +30,7 @@ function LoadModules() {
 // Save and close all the module files in this function
 //
 function CloseModules() {
-
+    SUDO.Close();
 }
 
 //
@@ -27,27 +40,21 @@ function CloseModules() {
 function ProcessBotCommand(Message) {
 
     var args = Message.content.substring(1).split(' ');
-    switch(args[0])
-    {
+    switch (args[0]) {
         case 'ping':
-        {
-            Message.reply('pong');
-        } break;
+            {
+                Message.reply('pong');
+            } break;
 
         case 'sudo':
-        {
-            if(Message.member.roles.find(role => role.name == 'manager')) {
-                Message.reply('You can use sudo');
-            }
-            else {
-                Message.reply('You do not have permissions to use sudo commands');
-            }
-        } break;
+            {
+                Modules[0].call(Message);
+            } break;
 
         default:
-        {
-            Message.reply('Command not found');
-        }
+            {
+                Message.reply('Command not found');
+            }
     }
 
     if (Message.content == CommandPrefix + 'join') {
@@ -57,8 +64,8 @@ function ProcessBotCommand(Message) {
             }
             else {
                 Message.member.voiceChannel.join()
-                .then(connection => console.log('Connected!'))
-                .catch(console.error);
+                    .then(connection => console.log('Connected!'))
+                    .catch(console.error);
                 Message.reply('You are connected to music voice channel!');
             }
         }
