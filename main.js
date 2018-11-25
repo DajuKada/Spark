@@ -1,28 +1,59 @@
 // Core discord js
-const Discord = require('discord.js');
-const client = new Discord.Client();
+const DISCORD = require('discord.js');
+const BOT = new DISCORD.Client();
 
 // Other dependencies
-const fs = require('fs');
-var _ = require('c-struct');
+const FS = require('fs');
+const STRUCT = require('c-struct');
 
 
 // Globals
-var discord_prams = new _.Schema({ token: _.type.string(), prefix: _.type.string(1) });
+var DiscordParms = new STRUCT.Schema(
+    { 
+        token: STRUCT.type.string(), 
+        prefix: STRUCT.type.string(1),
+        ready: STRUCT.type.u8(0) 
+    }
+);
 
 // Setting up configurations
-var __botConfig = JSON.parse(fs.readFileSync('config/server.json', 'utf-8'));
-discord_prams.token = __botConfig.token;
-discord_prams.prefix = __botConfig.prefix;
+var __botConfig = JSON.parse(FS.readFileSync('config/server.json', 'utf-8'));
+DiscordParms.token = __botConfig.token;
+DiscordParms.prefix = __botConfig.prefix;
 
-client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+// Bot shutting down
+if (process.platform === "win32") {
+    var rl = require("readline").createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.on("SIGINT", function() {
+        process.emit("SIGINT");
+    });
+}
+process.on("SIGINT", function() {
+    console.log("Disconnecting bot..")
+    
+    process.exit();
 });
 
-client.on('message', msg => {
-    if (msg.content === discord_prams.prefix + 'ping') {
-        msg.reply('pong');
+// Bot connection
+BOT.on('ready', () => {
+    console.log(`Logged in as ${BOT.user.tag}!`);
+
+    // Bot is ready
+    DiscordParms.ready = 1;
+});
+
+BOT.on('message', Msg => {
+    // Don't process the message if it is from bot
+    if(Msg.author.bot)
+        return;
+
+    if (Msg.content === DiscordParms.prefix + 'ping') {
+        Msg.reply('pong');
     }
 });
 
-client.login(discord_prams.token);
+BOT.login(DiscordParms.token);
