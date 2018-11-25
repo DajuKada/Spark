@@ -2,7 +2,7 @@ const DISCORD = require('discord.js');
 
 var MESSAGE = DISCORD.Message;
 var CommandPrefix = '';
-
+var Modules = [];
 
 //
 // Function is called once when the bot is connected
@@ -26,8 +26,28 @@ function CloseModules() {
 //
 function ProcessBotCommand(Message) {
 
-    if (Message.content === CommandPrefix + 'ping') {
-        Message.reply('pong');
+    var args = Message.content.substring(1).split(' ');
+    switch(args[0])
+    {
+        case 'ping':
+        {
+            Message.reply('pong');
+        } break;
+
+        case 'sudo':
+        {
+            if(Message.member.roles.find(role => role.name == 'manager')) {
+                Message.reply('You can use sudo');
+            }
+            else {
+                Message.reply('You do not have permissions to use sudo commands');
+            }
+        } break;
+
+        default:
+        {
+            Message.reply('Command not found');
+        }
     }
 
     if (Message.content == CommandPrefix + 'join') {

@@ -17,7 +17,6 @@ var DiscordParms = new STRUCT.Schema(
         ready: STRUCT.type.u8(0)
     }
 );
-var MusicChannel = JSON.parse(FS.readFileSync('config/music.json', 'utf-8')).output;
 
 // Setting up configurations
 var __botConfig = JSON.parse(FS.readFileSync('config/server.json', 'utf-8'));
