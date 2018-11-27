@@ -31,8 +31,9 @@
 
 ## Adding new modules
 - Create a new file in `modules` directory
-- Import it in the file `main.js` here::
+- Import it in the file [main.js](./main.js) here::
 ```js
+///// continuation
 const CORE = require('./core');
 const PING = require('./modules/ping');
 const MUSIC = require('./modules/music');
@@ -46,6 +47,7 @@ function StartUp() {
     MY_MODULE.Load(CORE.Register);
     // your other modules
 }
+///// continuation
 ```
 - The basic template for module file is::
 ```js
