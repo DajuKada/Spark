@@ -65,7 +65,7 @@ BOT.on('ready', () => {
 
     // Bot is ready
     console.log('Prefix for the command set as : ' + DiscordParms.prefix);
-    console.log('Notifiaction channel has been set as "' +
+    console.log('Notification channel has been set as "' +
         BOT.channels.find(val => val.id == DiscordParms.notification).name +
         '" of id : ' + DiscordParms.notification);
     DiscordParms.ready = 1;
