@@ -14,14 +14,8 @@ function Close() {
 
 module.exports = {
 
-    Load: function() {
-        return {
-            signature: 'ping',
-            call: Process,
-            close: Close,
-            help: HelpMessage,
-            description: 'Check the bot connection'
-        };
+    Load: function (Register) {
+        Register('ping', Process, Close, HelpMessage, 'Check the bot connection');
     }
 
 }

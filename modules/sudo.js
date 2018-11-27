@@ -19,14 +19,8 @@ function Close() {
 
 module.exports = {
 
-    Load: function () {
-        return {
-            signature: 'sudo',
-            call: Process,
-            close: Close,
-            help: HelpMessage,
-            description: 'sudo command is for sudo users'
-        };
+    Load: function (Register) {
+        Register('sudo', Process, Close, HelpMessage, 'sudo command is for sudo users');
     }
 
 }

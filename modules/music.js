@@ -30,14 +30,8 @@ function Close() {
 
 module.exports = {
 
-    Load: function () {
-        return {
-            signature: 'music',
-            call: Process,
-            close: Close,
-            help: HelpMessage,
-            description: 'Control the music player of the server'
-        };
+    Load: function (Register) {
+        Register('player', Process, Close, HelpMessage, 'Control the music player of the server');
     }
 
 }
