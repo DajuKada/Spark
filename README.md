@@ -18,6 +18,14 @@
     "prefix": "your_desired_prefix_for_bot_command"
 }
 ```
+- Create a file named `sudo.json` in the `config` directory and add the following
+```json
+{
+    "announcement_channel": "announcement_channel_id",
+    "management_channel": "management_channel_id",
+    "sudo_user": "sudo_role"
+}
+```
 
 
 ## Installing

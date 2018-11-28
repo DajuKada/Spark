@@ -28,6 +28,7 @@ function ProcessSudo(Message, Args) {
                     announcement = Message.content.substr('.sudo announce '.length);
                     //announcement = '@everyone \n' + announcement;
                     channel.send(announcement);
+                    Message.delete();
                 }
             } break;
 
