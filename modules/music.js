@@ -1,6 +1,46 @@
 const DISCORD = require('discord.js');
+const PLAYER = require('ytdl-core');
 
 var ConnectedVoiceChannel = null;
+
+function JoinVoiceChannel(Message) {
+    if (ConnectedVoiceChannel) {
+        if (ConnectedVoiceChannel == Message.member.voiceChannel) {
+            Message.reply('I am already in the voice channel!');
+        }
+        else {
+            Message.reply('I am already connected to the voice channel: :speaker:' +
+                ConnectedVoiceChannel.name +
+                '. Please connect to this channel.');
+        }
+        return;
+    }
+
+    voiceChannel = Message.member.voiceChannel;
+    if (voiceChannel) {
+        if (voiceChannel.joinable) {
+            voiceChannel.join();
+            ConnectedVoiceChannel = voiceChannel;
+        } else {
+            Message.reply('I don\'t have permissions to join that voice channel');
+        }
+    } else {
+        Message.reply('you must connect to a voice channel first');
+    }
+}
+
+function LeaveVoiceChannel(Message) {
+    if (ConnectedVoiceChannel) {
+        if (ConnectedVoiceChannel == Message.member.voiceChannel) {
+            ConnectedVoiceChannel.leave();
+            ConnectedVoiceChannel = null;
+        } else {
+            Message.reply('you are not connected to the voice channel that I am in!');
+        }
+    } else {
+        Message.reply('I am not connected to any voice channel!');
+    }
+}
 
 function Process(Message, Args) {
 
@@ -8,49 +48,33 @@ function Process(Message, Args) {
     switch (firstArg) {
         case 'join': // join the voice channel that the caller is on and have permission
             {
-                if (ConnectedVoiceChannel) {
-                    if (ConnectedVoiceChannel == Message.member.voiceChannel) {
-                        Message.reply('I am already in the voice channel!');
-                    }
-                    else {
-                        Message.reply('I am already connected to the voice channel: :speaker:' +
-                            ConnectedVoiceChannel.name +
-                            '. Please connect to this channel.');
-                    }
-                    return;
-                }
-
-                voiceChannel = Message.member.voiceChannel;
-                if (voiceChannel) {
-                    if (voiceChannel.joinable) {
-                        voiceChannel.join();
-                        ConnectedVoiceChannel = voiceChannel;
-                    } else {
-                        Message.reply('I don\'t have permissions to join that voice channel');
-                    }
-                } else {
-                    Message.reply('you must connect to a voice channel first');
-                }
+                JoinVoiceChannel(Message);
             } break;
 
         case 'leave': // leave the voice channel if connected to one
             {
-                if (ConnectedVoiceChannel) {
-                    if (ConnectedVoiceChannel == Message.member.voiceChannel) {
-                        ConnectedVoiceChannel.leave();
-                        ConnectedVoiceChannel = null;
-                    } else {
-                        Message.reply('you are not connected to the voice channel that I am in!');
-                    }
-                } else {
-                    Message.reply('I am not connected to any voice channel!');
-                }
+                LeaveVoiceChannel(Message);
             } break;
 
         case 'play': // search for music in youtube or play the selected music from search result if -1
             {
+                if (!ConnectedVoiceChannel) {
+                    JoinVoiceChannel(Message);
+                    if (!ConnectedVoiceChannel) {
+                        return;
+                    }
+                }
 
+                ytlink = Args[2];
+                if (ytlink[0] == '<') {
+                    ytlink = ytlink.substr(1, ytlink.length - 1);
+                }
+                const stream = PLAYER(ytlink, { filter: 'audioonly' });
+                streamOptions = { seek: 0, volume: 1 };
+                ConnectedVoiceChannel.connection.playStream(stream, streamOptions);
             } break;
+
+
         case 'pause': // pause the player if playing
             {
 

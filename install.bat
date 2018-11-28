@@ -7,3 +7,4 @@ npm install libsodium-wrappers
 npm install uws
 npm install discord.js node-opus
 npm install discord.js opusscript
+npm install ytdl-core
