@@ -17,6 +17,12 @@
   },
   "homepage": "https://github.com/Zero5620/Spark#readme",
   "dependencies": {
-    "c-struct": "0.0.5"
+    "bufferutil": "^4.0.0",
+    "c-struct": "0.0.5",
+    "discord.js": "^11.4.2",
+    "fs": "0.0.1-security",
+    "libsodium-wrappers": "^0.7.3",
+    "opusscript": "0.0.6",
+    "uws": "^99.0.0"
   }
 }

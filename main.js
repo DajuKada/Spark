@@ -8,6 +8,15 @@ const STRUCT = require('c-struct');
 
 // Implemented files
 const CORE = require('./core');
+const PING = require('./modules/ping');
+const MUSIC = require('./modules/music');
+const SUDO = require('./modules/sudo');
+
+function StartUp() {
+    PING.Load(CORE.Register);
+    MUSIC.Load(CORE.Register);
+    SUDO.Load(CORE.Register);
+}
 
 // Globals
 var DiscordParms = new STRUCT.Schema(
@@ -52,8 +61,13 @@ BOT.on('ready', () => {
     console.log(`Logged in as ${BOT.user.tag}!`);
 
     CORE.StartUp(DiscordParms.prefix, DiscordParms.notification);
+    StartUp();
 
     // Bot is ready
+    console.log('Prefix for the command set as : ' + DiscordParms.prefix);
+    console.log('Notification channel has been set as "' +
+        BOT.channels.find(val => val.id == DiscordParms.notification).name +
+        '" of id : ' + DiscordParms.notification);
     DiscordParms.ready = 1;
 });
 

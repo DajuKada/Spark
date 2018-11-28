@@ -14,7 +14,7 @@
 ```json
 {
     "token": "your_bot_token",
-    "notification": "bot_notification_channel_id",
+    "notification": "channel_id",
     "prefix": "your_desired_prefix_for_bot_command"
 }
 ```
@@ -28,3 +28,62 @@
 - Run `run.sh` file in linux
 - Run `run.ps1` or `run.bat` file in windows
 
+
+## Adding new modules
+- Create a new file in `modules` directory
+- Import it in the file [main.js](./main.js) here::
+```js
+///// continuation
+const CORE = require('./core');
+const PING = require('./modules/ping');
+const MUSIC = require('./modules/music');
+const SUDO = require('./modules/sudo');
+const MY_MODULE = require('./modules/my_module');
+// your other modules
+function StartUp() {
+    PING.Load(CORE.Register);
+    MUSIC.Load(CORE.Register);
+    SUDO.Load(CORE.Register);
+    MY_MODULE.Load(CORE.Register);
+    // your other modules
+}
+///// continuation
+```
+- The basic template for module file is::
+```js
+const DISCORD = require('discord.js');
+
+// When message with registered command is sent, this function is called
+/*
+    @Message: Message class from discordjs (https://discord.js.org/#/docs/main/stable/class/Message)
+    @Args: Arguments passed with commands (e.g. if `!help ping pong` is sent, @Args is ['help', 'ping' , 'pong'])
+*/
+function Process(Message, Args) {
+    Message.reply('pong!');
+}
+
+// When `help` command is called with the module name as argument
+/*
+    @Args: Arguments passed with commands (e.g. if `!help ping pong` is sent, @Args is ['help', 'ping' , 'pong'])
+*/
+function HelpMessage(Args) {
+    return 'This is help for ping';
+}
+
+// Called when the bot is about to shutdown, save your stuffs to file!!
+function Close() {
+    // should return true if close is sucessfull
+    return true;
+}
+
+module.exports = {
+
+    // Called when the bot is started, load your saved files!!
+    Load: function (Register) {
+        // Use `Register` function to register "one" or "several" commands
+        // Register (invocation_command, close_function, help_function, command_description)
+        Register('ping', Process, Close, HelpMessage, 'Check the bot connection');
+    }
+
+}
+```
