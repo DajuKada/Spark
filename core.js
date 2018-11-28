@@ -3,7 +3,6 @@ const DISCORD = require('discord.js');
 var CommandPrefix = '';
 var ChannelNotification = '';
 var Modules = [];
-var DisabledModules = [];
 
 //
 // Function is called everytime the message starts with prefix
@@ -17,7 +16,7 @@ function ProcessBotCommand(Message) {
         if (args[1]) {
             for (let i = 0; i < Modules.length; ++i) {
                 if (Modules[i].signature == args[1]) {
-                    if (IsModuleDisabled(Modules[i].signature)) {
+                    if (!Modules[i].enabled) {
                         Message.channel.send('"' + args[1] + '" module is disabled!');
                         return;
                     }
@@ -35,7 +34,7 @@ function ProcessBotCommand(Message) {
     // Other modules
     for (let i = 0; i < Modules.length; ++i) {
         if (Modules[i].signature == args[0]) {
-            if (IsModuleDisabled(Modules[i].signature)) {
+            if (!Modules[i].enabled) {
                 Message.channel.send('"' + args[0] + '" module is disabled!');
                 return;
             }
@@ -50,22 +49,13 @@ function ProcessBotCommand(Message) {
 function GetStringOfModulesList() {
     let module_string = '```py\n# Here are the lists of modules::\n';
     Modules.forEach(function (m) {
-        module_string += m.signature + " = '" + m.description + "'\n";
+        if (m.enabled) {
+            module_string += m.signature + " = '" + m.description + "'\n";
+        }
     });
     module_string += '```\nType `!help <module_name>` to get help for specific module.';
     return module_string;
 }
-
-function IsModuleDisabled(name) {
-    result = false;
-    DisabledModules.forEach(function (modName) {
-        if (modName == name) {
-            result = true;
-        }
-    });
-    return result;
-}
-
 
 //
 // Function is called everytime user sends some messages
@@ -90,6 +80,7 @@ module.exports = {
         });
         Modules.push({
             signature: signature,
+            enabled: true,
             call: call,
             close: close,
             help: help,
@@ -102,28 +93,31 @@ module.exports = {
         if (name == 'sudo') {
             return ('"sudo" module can\'t be disabled or enabled!');
         }
-        for (dm = 0; dm < DisabledModules.length; ++dm) {
-            if (DisabledModules[dm] == name) {
-                DisabledModules.pop(dm);
-                return ('"' + name + '" module enabled successfully!');
+        for (dm = 0; dm < Modules.length; ++dm) {
+            if (Modules[dm].signature == name) {
+                if (Modules[dm].enabled) {
+                    return ('"' + name + '" module is already enabled!');
+                } else {
+                    Modules[dm].enabled = true;
+                    return ('"' + name + '" module enabled successfully!');
+                }
             }
         }
-        return ('"' + name + '" module either doesn\'t exist or is already enabled!');
+        return ('"' + name + '" module doesn\'t exist!');
     },
 
     Disable: function (name) {
         if (name == 'sudo') {
             return ('"sudo" module can\'t be disabled or enabled!');
         }
-        for (dm = 0; dm < DisabledModules.length; ++dm) {
-            if (DisabledModules[dm] == name) {
-                return ('"' + name + '" module is already disabled!');
-            }
-        }
         for (m = 0; m < Modules.length; ++m) {
             if (Modules[m].signature == name) {
-                DisabledModules.push(name);
-                return ('"' + name + '" module has been disabled!');
+                if (Modules[m].enabled) {
+                    Modules[m].enabled = false;
+                    return ('"' + name + '" module has been disabled!');
+                } else {
+                    return ('"' + name + '" module is already disabled!');
+                }
             }
         }
         return ('"' + name + '" module doesn\'t exist!');
