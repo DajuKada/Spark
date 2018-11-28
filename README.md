@@ -14,6 +14,7 @@
 ```json
 {
     "token": "your_bot_token",
+    "notification": "bot_notification_channel_id",
     "prefix": "your_desired_prefix_for_bot_command"
 }
 ```
