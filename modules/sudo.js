@@ -1,4 +1,5 @@
 const DISCORD = require('discord.js');
+const CORE = require('../core');
 const FS = require('fs');
 
 var __sudoConfig = JSON.parse(FS.readFileSync('config/sudo.json', 'utf-8'));
@@ -32,6 +33,18 @@ function ProcessSudo(Message, Args) {
                 }
             } break;
 
+        case 'enable':
+            {
+                moduleName = ''; // extract module name
+                CORE.Enable(moduleName);
+            } break;
+
+        case 'disable':
+            {
+                moduleName = ''; // extract module name
+                CORE.Disable(moduleName);
+            } break;
+
         default:
             {
                 Message.reply('this sudo command is not present in the module');
@@ -49,11 +62,11 @@ function SudoClose() {
 }
 
 function ProcessManageMessage(Message, Args) {
-    
+
     username = Message.author.username + '(' + Message.author.discriminator + ')';
     message = Message.content.substr('.manager '.length);
     channel = Message.client.channels.find(val => val.id == ManagementChannel);
-    if(channel) {
+    if (channel) {
         mention = 'manager, ';
         //mention = '<@&' + Message.guild.roles.find(m=> m.name == SudoUser).id + '> ';
         channel.send(mention + 'User::' + username + 'has sent a message::\n' + message);
