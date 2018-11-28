@@ -82,25 +82,25 @@ module.exports = {
         ChannelNotification = notification;
     },
 
-    Register: function (sign, call, close, help, desc) {
+    Register: function (signature, call, close, help, desc) {
         Modules.forEach(function (m) {
-            if (m.signature == sign) {
-                console.error(sign + ' could not be registered, because module with same signature already exists');
+            if (m.signature == signature) {
+                console.error(signature + ' could not be registered, because module with same signature already exists');
             }
         });
         Modules.push({
-            signature: sign,
+            signature: signature,
             call: call,
             close: close,
             help: help,
             description: desc
         });
-        console.log(sign + ' has been registered');
+        console.log(signature + ' has been registered');
     },
 
     Enable: function (name) {
         for (dm = 0; dm < DisabledModules.length; ++dm) {
-            if (dm.sign == name) {
+            if (DisabledModules[dm] == name) {
                 DisabledModules.pop(dm);
                 return ('"' + name + '" module enabled successfully!');
             }
@@ -110,12 +110,12 @@ module.exports = {
 
     Disable: function (name) {
         for (dm = 0; dm < DisabledModules.length; ++dm) {
-            if (dm.sign == name) {
+            if (DisabledModules[dm] == name) {
                 return ('"' + name + '" module is already disabled!');
             }
         }
         for (m = 0; m < Modules.length; ++m) {
-            if (dm.sign == name) {
+            if (Modules[dm].signature == name) {
                 DisabledModules.push(name);
                 return ('"' + name + '" module has been disabled!');
             }

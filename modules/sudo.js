@@ -35,14 +35,20 @@ function ProcessSudo(Message, Args) {
 
         case 'enable':
             {
-                moduleName = ''; // extract module name
-                CORE.Enable(moduleName);
+                for (cntr = 2; cntr < Args.length; ++cntr) {
+                    moduleName = Args[cntr];
+                    msg = CORE.Enable(moduleName);
+                    Message.channel.send(msg);
+                }
             } break;
 
         case 'disable':
             {
-                moduleName = ''; // extract module name
-                CORE.Disable(moduleName);
+                for (cntr = 2; cntr < Args.length; ++cntr) {
+                    moduleName = Args[cntr];
+                    msg = CORE.Disable(moduleName);
+                    Message.channel.send(msg);
+                }
             } break;
 
         default:
@@ -65,6 +71,11 @@ function ProcessManageMessage(Message, Args) {
 
     username = Message.author.username + '(' + Message.author.discriminator + ')';
     message = Message.content.substr('.manager '.length);
+    if (message.length < 5) {
+        Message.reply('Please enter more descriptive message');
+        Message.delete();
+        return;
+    }
     channel = Message.client.channels.find(val => val.id == ManagementChannel);
     if (channel) {
         mention = 'manager, ';
