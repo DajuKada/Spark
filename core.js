@@ -99,6 +99,9 @@ module.exports = {
     },
 
     Enable: function (name) {
+        if (name == 'sudo') {
+            return ('"sudo" module can\'t be disabled or enabled!');
+        }
         for (dm = 0; dm < DisabledModules.length; ++dm) {
             if (DisabledModules[dm] == name) {
                 DisabledModules.pop(dm);
@@ -109,13 +112,16 @@ module.exports = {
     },
 
     Disable: function (name) {
+        if (name == 'sudo') {
+            return ('"sudo" module can\'t be disabled or enabled!');
+        }
         for (dm = 0; dm < DisabledModules.length; ++dm) {
             if (DisabledModules[dm] == name) {
                 return ('"' + name + '" module is already disabled!');
             }
         }
         for (m = 0; m < Modules.length; ++m) {
-            if (Modules[dm].signature == name) {
+            if (Modules[m].signature == name) {
                 DisabledModules.push(name);
                 return ('"' + name + '" module has been disabled!');
             }
