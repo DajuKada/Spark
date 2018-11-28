@@ -3,6 +3,7 @@ const DISCORD = require('discord.js');
 var CommandPrefix = '';
 var ChannelNotification = '';
 var Modules = [];
+var DisabledModules = [];
 
 //
 // Function is called everytime the message starts with prefix
@@ -16,6 +17,10 @@ function ProcessBotCommand(Message) {
         if (args[1]) {
             for (let i = 0; i < Modules.length; ++i) {
                 if (Modules[i].signature == args[1]) {
+                    if (IsModuleDisabled(Modules[i].signature)) {
+                        Message.channel.send('"' + args[1] + '" module is disabled!');
+                        return;
+                    }
                     help_msg = Modules[i].help(args);
                     break;
                 }
@@ -30,6 +35,10 @@ function ProcessBotCommand(Message) {
     // Other modules
     for (let i = 0; i < Modules.length; ++i) {
         if (Modules[i].signature == args[0]) {
+            if (IsModuleDisabled(Modules[i].signature)) {
+                Message.channel.send('"' + args[0] + '" module is disabled!');
+                return;
+            }
             Modules[i].call(Message, args);
             return;
         }
@@ -45,6 +54,16 @@ function GetStringOfModulesList() {
     });
     module_string += '```\nType `!help <module_name>` to get help for specific module.';
     return module_string;
+}
+
+function IsModuleDisabled(name) {
+    result = false;
+    DisabledModules.forEach(function (modName) {
+        if (modName == name) {
+            result = true;
+        }
+    });
+    return result;
 }
 
 
@@ -77,6 +96,31 @@ module.exports = {
             description: desc
         });
         console.log(sign + ' has been registered');
+    },
+
+    Enable: function (name) {
+        for (dm = 0; dm < DisabledModules.length; ++dm) {
+            if (dm.sign == name) {
+                DisabledModules.pop(dm);
+                return ('"' + name + '" module enabled successfully!');
+            }
+        }
+        return ('"' + name + '" module either doesn\'t exist or is already enabled!');
+    },
+
+    Disable: function (name) {
+        for (dm = 0; dm < DisabledModules.length; ++dm) {
+            if (dm.sign == name) {
+                return ('"' + name + '" module is already disabled!');
+            }
+        }
+        for (m = 0; m < Modules.length; ++m) {
+            if (dm.sign == name) {
+                DisabledModules.push(name);
+                return ('"' + name + '" module has been disabled!');
+            }
+        }
+        return ('"' + name + '" module doesn\'t exist!');
     },
 
     ProcessCommand: function (Message) {
