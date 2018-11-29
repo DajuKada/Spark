@@ -12,6 +12,23 @@ var CurrentDispatcher = null;
 var PlayerEventEmitter = new EVENTS.EventEmitter();
 var PlayerMode = 'none';
 
+const MusicCommands = {
+    "join": { "cmd": "join", "desc": "Join a voice channel" },
+    "leave": { "cmd": "leave", "desc": "Leave the voice channel" },
+    "play": { "cmd": "play", "desc": "Play music by loading from youtube" },
+    "pause": { "cmd": "pause", "desc": "Pauses the player" },
+    "resume": { "cmd": "resume", "desc": "Resumes the player" },
+    "save": { "cmd": "save", "desc": "Saves the current playlist" },
+    "clear": { "cmd": "clear", "desc": "Removes all music from the current playlist" },
+    "load": { "cmd": "load", "desc": "Loads a playlist from saved playlists" },
+    "playlists": { "cmd": "playlists", "desc": "Displays all saved playlists" },
+    "skipf": { "cmd": "skipf", "desc": "Plays previous music in the playlist" },
+    "skipb": { "cmd": "skipb", "desc": "Plays next music in the playlist" },
+    "repeat": { "cmd": "repeat", "desc": "Sets player repeat mode" },
+    "list": { "cmd": "list", "desc": "Lists 5 music in the playlist page by page" },
+    "now": { "cmd": "now", "desc": "Shows the currently playing music" }
+};
+
 function JoinVoiceChannel(Message) {
     if (ConnectedVoiceChannel) {
         if (ConnectedVoiceChannel == Message.member.voiceChannel) {
@@ -60,7 +77,6 @@ function Play() {
     dispatcher = ConnectedVoiceChannel.connection.playStream(stream, StreamOptions);
     CurrentDispatcher = dispatcher;
     dispatcher.on('end', function (reason) {
-        console.log(reason);
         if (PlayerMode != 'one') {
             CurrentMusicIndex += 1;
         }
@@ -108,17 +124,17 @@ function Process(Message, Args) {
 
     firstArg = Args[1];
     switch (firstArg) {
-        case 'join': // join the voice channel that the caller is on and have permission
+        case MusicCommands.join.cmd: // join the voice channel that the caller is on and have permission
             {
                 JoinVoiceChannel(Message);
             } break;
 
-        case 'leave': // leave the voice channel if connected to one
+        case MusicCommands.leave.cmd: // leave the voice channel if connected to one
             {
                 LeaveVoiceChannel(Message);
             } break;
 
-        case 'play': // search for music in youtube or play the selected music from search result if -1
+        case MusicCommands.play.cmd: // search for music in youtube or play the selected music from search result if -1
             {
                 if (!ConnectedVoiceChannel) {
                     JoinVoiceChannel(Message);
@@ -158,26 +174,26 @@ function Process(Message, Args) {
 
             } break;
 
-        case 'pause': // pause the player if playing
+        case MusicCommands.pause.cmd: // pause the player if playing
             {
                 if (Pause()) {
                     Message.channel.send(':pause_button: Player paused!');
                 }
             } break;
 
-        case 'resume': // resumes the player if plaused
+        case MusicCommands.resume.cmd: // resumes the player if plaused
             {
                 if (Resume()) {
                     Message.channel.send(':arrow_forward: Player resumed!');
                 }
             } break;
 
-        case 'save': // save the current playing list
+        case MusicCommands.save.cmd: // save the current playing list
             {
 
             } break;
 
-        case 'clear': // clear the musics in the current playlist
+        case MusicCommands.clear.cmd: // clear the musics in the current playlist
             {
                 if (ConnectedVoiceChannel && Message.member.voiceChannel == ConnectedVoiceChannel) {
                     ClearPlaylist();
@@ -187,22 +203,27 @@ function Process(Message, Args) {
                 }
             } break;
 
-        case 'load': // load the saved playlist if present
+        case MusicCommands.load.cmd: // load the saved playlist if present
             {
 
             } break;
 
-        case 'skipf': // skip the player forwards
+        case MusicCommands.playlists.cmd: // display all saved playlist
             {
 
             } break;
 
-        case 'skipb': // skip the player backwards
+        case MusicCommands.skipf.cmd: // skip the player forwards
             {
 
             } break;
 
-        case 'repeat': // mode can be either 'all', 'none', 'one'
+        case MusicCommands.skipb.cmd: // skip the player backwards
+            {
+
+            } break;
+
+        case MusicCommands.repeat.cmd: // mode can be either 'all', 'none', 'one'
             {
                 mode = Args[2];
                 if (mode == 'all') {
@@ -215,7 +236,7 @@ function Process(Message, Args) {
                 Message.channel.send(':musical_note: Player Repeat mode: **' + PlayerMode + '**');
             } break;
 
-        case 'list': // shows all music in currently playing playlist
+        case MusicCommands.list.cmd: // shows all music in currently playing playlist
             {
                 if (CurrentPlaylist.length == 0) {
                     Message.channel.send(':negative_squared_cross_mark: No songs playing :negative_squared_cross_mark:');
@@ -229,7 +250,7 @@ function Process(Message, Args) {
                 Message.channel.send(music_list);
             } break;
 
-        case 'now': // shows currently playing song
+        case MusicCommands.now.cmd: // shows currently playing song
             {
                 if (!CurrentPlaylist[CurrentMusicIndex]) {
                     Message.channel.send(':negative_squared_cross_mark: No songs playing :negative_squared_cross_mark:');
