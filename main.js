@@ -79,11 +79,11 @@ BOT.on('guildAddMember', member => {
         'Also you can call me any time with the command `!help` from #bot in the server! Enjoy!!');
 });
 
-BOT.on('message', Msg => {
+BOT.on('message', msg => {
     // Don't process the message if it is from bot
-    if (Msg.author.bot)
+    if (msg.author.bot)
         return;
-    CORE.ProcessCommand(Msg);
+    CORE.ProcessCommand(msg);
 });
 
 BOT.login(DiscordParms.token);
