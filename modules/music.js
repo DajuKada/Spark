@@ -24,6 +24,7 @@ const MusicCommands = {
     "playlists": { "cmd": "playlists", "desc": "Displays all saved playlists" },
     "skipf": { "cmd": "skipf", "desc": "Plays previous music in the playlist" },
     "skipb": { "cmd": "skipb", "desc": "Plays next music in the playlist" },
+    "seek": { "cmd": "seek", "desc": "Plays the music at given index" },
     "repeat": { "cmd": "repeat", "desc": "Sets player repeat mode" },
     "list": { "cmd": "list", "desc": "Lists 5 music in the playlist page by page" },
     "now": { "cmd": "now", "desc": "Shows the currently playing music" }
@@ -42,6 +43,7 @@ function GetCompiledCommandListWithDesc() {
     all_music_cmds += MusicCommands.playlists.cmd + " = '" + MusicCommands.playlists.desc + "'\n";
     all_music_cmds += MusicCommands.skipf.cmd + " = '" + MusicCommands.skipf.desc + "'\n";
     all_music_cmds += MusicCommands.skipb.cmd + " = '" + MusicCommands.skipb.desc + "'\n";
+    all_music_cmds += MusicCommands.seek.cmd + " = '" + MusicCommands.seek.desc + "'\n";
     all_music_cmds += MusicCommands.repeat.cmd + " = '" + MusicCommands.repeat.desc + "'\n";
     all_music_cmds += MusicCommands.list.cmd + " = '" + MusicCommands.list.desc + "'\n";
     all_music_cmds += MusicCommands.now.cmd + " = '" + MusicCommands.now.desc + "'\n";
@@ -97,7 +99,7 @@ function Play() {
     dispatcher = ConnectedVoiceChannel.connection.playStream(stream, StreamOptions);
     CurrentDispatcher = dispatcher;
     dispatcher.on('end', function (reason) {
-        if(reason == 'skipping') {
+        if (reason == 'skipping') {
             CurrentDispatcher = null;
             return;
         }
@@ -266,6 +268,27 @@ function Process(Message, Args) {
                 Message.channel.send(GetNowPlaying());
             } break;
 
+        case MusicCommands.seek.cmd: // seek at given index
+            {
+                if (Args[2]) {
+                    index = parseInt(Args[2]);
+                    if (index == NaN) {
+                        Message.reply('please specify an index from 1 to ' + CurrentPlaylist.length.toString());
+                    } else {
+                        if ((index < 1) || (index > CurrentPlaylist.length)) {
+                            Message.reply('index must range from 1 to ' + CurrentPlaylist.length.toString());
+                        } else {
+                            CurrentMusicIndex = index - 1;
+                            CurrentDispatcher.end('skipping');
+                            Play();
+                            Message.channel.send(GetNowPlaying());
+                        }
+                    }
+                } else {
+                    Message.reply('please specify an index from 0 to ' + (CurrentPlaylist.length - 1).toString());
+                }
+            } break;
+
         case MusicCommands.repeat.cmd: // mode can be either 'all', 'none', 'one'
             {
                 mode = Args[2];
@@ -378,6 +401,12 @@ function HelpMessage(Args) {
                 music_cmd_desc += MusicCommands.skipb.cmd + '\n';
                 music_cmd_desc += '- Description: ' + MusicCommands.skipb.desc + '\n';
                 music_cmd_desc += '- Syntax: **player skipb** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.seek.cmd:
+                music_cmd_desc += MusicCommands.seek.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.seek.desc + '\n';
+                music_cmd_desc += '- Syntax: **player seek <index>** \n```';
                 return music_cmd_desc;
 
             case MusicCommands.repeat.cmd:
