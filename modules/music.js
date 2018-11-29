@@ -97,11 +97,16 @@ function Play() {
     dispatcher = ConnectedVoiceChannel.connection.playStream(stream, StreamOptions);
     CurrentDispatcher = dispatcher;
     dispatcher.on('end', function (reason) {
+        if(reason == 'skipping') {
+            CurrentDispatcher = null;
+            return;
+        }
+
         if (PlayerMode != 'one') {
             CurrentMusicIndex += 1;
         }
         if (CurrentPlaylist[CurrentMusicIndex]) {
-            PlayerEventEmitter.emit('next_music');
+            PlayerEventEmitter.emit('change_music');
         } else {
             if (PlayerMode == 'none' || PlayerMode == 'one') {
                 CurrentDispatcher = null;
@@ -109,12 +114,18 @@ function Play() {
                 ClearPlaylist();
             } else if (PlayerMode == 'all') {
                 CurrentMusicIndex = 0;
-                PlayerEventEmitter.emit('next_music');
+                PlayerEventEmitter.emit('change_music');
             }
         }
     });
 }
-PlayerEventEmitter.on('next_music', Play);
+PlayerEventEmitter.on('change_music', Play);
+
+function GetNowPlaying() {
+    now_playing = '```md\n# Now Playing [Mode: Repeat ' + PlayerMode + ']\n';
+    now_playing += CurrentPlaylist[CurrentMusicIndex].title + '\n```';
+    return now_playing;
+}
 
 function Pause() {
     if (CurrentDispatcher) {
@@ -235,12 +246,24 @@ function Process(Message, Args) {
 
         case MusicCommands.skipf.cmd: // skip the player forwards
             {
-
+                ++CurrentMusicIndex;
+                if (CurrentMusicIndex > (CurrentPlaylist.length - 1)) {
+                    CurrentMusicIndex = 0;
+                }
+                CurrentDispatcher.end('skipping');
+                Play();
+                Message.channel.send(GetNowPlaying());
             } break;
 
         case MusicCommands.skipb.cmd: // skip the player backwards
             {
-
+                --CurrentMusicIndex;
+                if (CurrentMusicIndex < 0) {
+                    CurrentMusicIndex = CurrentPlaylist.length - 1;
+                }
+                CurrentDispatcher.end('skipping');
+                Play();
+                Message.channel.send(GetNowPlaying());
             } break;
 
         case MusicCommands.repeat.cmd: // mode can be either 'all', 'none', 'one'
@@ -276,9 +299,7 @@ function Process(Message, Args) {
                     Message.channel.send(':negative_squared_cross_mark: No songs playing :negative_squared_cross_mark:');
                     return;
                 }
-                now_playing = '```md\n# Now Playing [Mode: Repeat ' + PlayerMode + ']\n';
-                now_playing += CurrentPlaylist[CurrentMusicIndex].title + '\n```';
-                Message.channel.send(now_playing);
+                Message.channel.send(GetNowPlaying());
             } break;
 
         default: // error! show list of all possible commands for music player
