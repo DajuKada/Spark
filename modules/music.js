@@ -29,6 +29,26 @@ const MusicCommands = {
     "now": { "cmd": "now", "desc": "Shows the currently playing music" }
 };
 
+function GetCompiledCommandListWithDesc() {
+    all_music_cmds = '```py\n# Music help\n';
+    all_music_cmds += MusicCommands.join.cmd + " = '" + MusicCommands.join.desc + "'\n";
+    all_music_cmds += MusicCommands.leave.cmd + " = '" + MusicCommands.leave.desc + "'\n";
+    all_music_cmds += MusicCommands.play.cmd + " = '" + MusicCommands.play.desc + "'\n";
+    all_music_cmds += MusicCommands.pause.cmd + " = '" + MusicCommands.pause.desc + "'\n";
+    all_music_cmds += MusicCommands.resume.cmd + " = '" + MusicCommands.resume.desc + "'\n";
+    all_music_cmds += MusicCommands.save.cmd + " = '" + MusicCommands.save.desc + "'\n";
+    all_music_cmds += MusicCommands.clear.cmd + " = '" + MusicCommands.clear.desc + "'\n";
+    all_music_cmds += MusicCommands.load.cmd + " = '" + MusicCommands.load.desc + "'\n";
+    all_music_cmds += MusicCommands.playlists.cmd + " = '" + MusicCommands.playlists.desc + "'\n";
+    all_music_cmds += MusicCommands.skipf.cmd + " = '" + MusicCommands.skipf.desc + "'\n";
+    all_music_cmds += MusicCommands.skipb.cmd + " = '" + MusicCommands.skipb.desc + "'\n";
+    all_music_cmds += MusicCommands.repeat.cmd + " = '" + MusicCommands.repeat.desc + "'\n";
+    all_music_cmds += MusicCommands.list.cmd + " = '" + MusicCommands.list.desc + "'\n";
+    all_music_cmds += MusicCommands.now.cmd + " = '" + MusicCommands.now.desc + "'\n";
+    all_music_cmds += '```'
+    return all_music_cmds;
+}
+
 function JoinVoiceChannel(Message) {
     if (ConnectedVoiceChannel) {
         if (ConnectedVoiceChannel == Message.member.voiceChannel) {
@@ -263,13 +283,106 @@ function Process(Message, Args) {
 
         default: // error! show list of all possible commands for music player
             {
-                Message.reply('Error arguments supplied!');
+                error_help = 'Error: **' + firstArg + '** is not present in **player** module, here are the lists of commands:\n' + GetCompiledCommandListWithDesc();
+                Message.channel.send(error_help);
             } break;
     }
 }
 
 function HelpMessage(Args) {
-    return 'This is help for music!';
+    if (Args[2]) {
+        music_cmd_desc = '```md\n# player ';
+        switch (Args[2]) {
+            case MusicCommands.join.cmd:
+                music_cmd_desc += MusicCommands.join.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.join.desc + '\n';
+                music_cmd_desc += '- Syntax: **player join** after joining a voice channel.\n```';
+                return music_cmd_desc;
+
+            case MusicCommands.leave.cmd:
+                music_cmd_desc += MusicCommands.leave.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.join.desc + '\n';
+                music_cmd_desc += '- Syntax: **player leave** if I have joined a voice channel.\n```';
+                return music_cmd_desc;
+
+            case MusicCommands.play.cmd:
+                music_cmd_desc += MusicCommands.play.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.play.desc + '\n';
+                music_cmd_desc += '- Syntax: **player play [link | name of music]** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.pause.cmd:
+                music_cmd_desc += MusicCommands.pause.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.pause.desc + '\n';
+                music_cmd_desc += '- Syntax: **player pause** when the player is playing music.\n```';
+                return music_cmd_desc;
+
+            case MusicCommands.resume.cmd:
+                music_cmd_desc += MusicCommands.resume.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.resume.desc + '\n';
+                music_cmd_desc += '- Syntax: **player resume** when the player is paused.\n```';
+                return music_cmd_desc;
+
+            case MusicCommands.save.cmd:
+                music_cmd_desc += MusicCommands.save.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.save.desc + '\n';
+                music_cmd_desc += '- Syntax: **player save <playlist name>** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.clear.cmd:
+                music_cmd_desc += MusicCommands.clear.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.clear.desc + '\n';
+                music_cmd_desc += '- Syntax: **player clear** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.load.cmd:
+                music_cmd_desc += MusicCommands.load.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.load.desc + '\n';
+                music_cmd_desc += '- Syntax: **player load <playlist name>** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.playlists.cmd:
+                music_cmd_desc += MusicCommands.playlists.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.playlists.desc + '\n';
+                music_cmd_desc += '- Syntax: **player playlists*** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.skipf.cmd:
+                music_cmd_desc += MusicCommands.skipf.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.skipf.desc + '\n';
+                music_cmd_desc += '- Syntax: **player skipf** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.skipb.cmd:
+                music_cmd_desc += MusicCommands.skipb.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.skipb.desc + '\n';
+                music_cmd_desc += '- Syntax: **player skipb** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.repeat.cmd:
+                music_cmd_desc += MusicCommands.repeat.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.repeat.desc + '\n';
+                music_cmd_desc += '- Syntax: **player repeat [all | none | one]** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.list.cmd:
+                music_cmd_desc += MusicCommands.list.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.list.desc + '\n';
+                music_cmd_desc += '- Syntax: **player list [page number]** \n```';
+                return music_cmd_desc;
+
+            case MusicCommands.now.cmd:
+                music_cmd_desc += MusicCommands.now.cmd + '\n';
+                music_cmd_desc += '- Description: ' + MusicCommands.now.desc + '\n';
+                music_cmd_desc += '- Syntax: **player now** \n```';
+                return music_cmd_desc;
+
+            default:
+                return ':negative_squared_cross_mark: This command is not present in **player** module!';
+        }
+    } else {
+        return GetCompiledCommandListWithDesc();
+    }
 }
 
 function Close() {
