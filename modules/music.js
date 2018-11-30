@@ -109,14 +109,15 @@ function Play() {
                 return;
             }
 
-            if (CurrentMusicIndex) {
+            if (CurrentMusicIndex != null) {
                 if (PlayerMode != 'one') {
                     CurrentMusicIndex += 1;
                 }
-                if (CurrentPlaylist[CurrentMusicIndex]) {
+                next_music = CurrentPlaylist[CurrentMusicIndex];
+                if (next_music) {
                     PlayerEventEmitter.emit('change_music');
                 } else {
-                    if (PlayerMode == 'none' || PlayerMode == 'one') {
+                    if ((PlayerMode == 'none') || (PlayerMode == 'one')) {
                         CurrentDispatcher = null;
                         ClearPlaylist();
                     } else if (PlayerMode == 'all') {
@@ -181,13 +182,14 @@ function Process(Message, Args) {
 
                 // TODO(Zero): Search youtube for music
                 ytlink = Args[2];
-                if (!ytlink && CurrentPlaylist.length > 0) {
+                if (!ytlink && (CurrentPlaylist.length > 0)) {
                     if (Resume()) {
                         Message.channel.send(':arrow_forward: Player resumed!');
                     }
                     return;
-                } else if (!ytlink && CurrentPlaylist.length == 0) {
+                } else if (!ytlink && (CurrentPlaylist.length == 0)) {
                     Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
+                    return;
                 }
 
                 if (ytlink[0] == '<') {
@@ -253,7 +255,7 @@ function Process(Message, Args) {
 
         case MusicCommands.skipf.cmd: // skip the player forwards
             {
-                if (CurrentMusicIndex!=null) {
+                if (CurrentMusicIndex != null) {
                     ++CurrentMusicIndex;
                     if (CurrentMusicIndex > (CurrentPlaylist.length - 1)) {
                         CurrentMusicIndex = 0;
@@ -270,7 +272,7 @@ function Process(Message, Args) {
 
         case MusicCommands.skipb.cmd: // skip the player backwards
             {
-                if (CurrentMusicIndex!=null) {
+                if (CurrentMusicIndex != null) {
                     --CurrentMusicIndex;
                     if (CurrentMusicIndex < 0) {
                         CurrentMusicIndex = CurrentPlaylist.length - 1;
@@ -287,7 +289,7 @@ function Process(Message, Args) {
 
         case MusicCommands.seek.cmd: // seek at given index
             {
-                if (CurrentMusicIndex!=null) {
+                if (CurrentMusicIndex != null) {
                     if (Args[2]) {
                         index = parseInt(Args[2]);
                         if (index == NaN) {
