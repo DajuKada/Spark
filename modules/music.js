@@ -118,7 +118,6 @@ function Play() {
                 } else {
                     if (PlayerMode == 'none' || PlayerMode == 'one') {
                         CurrentDispatcher = null;
-                        CurrentMusicIndex = null;
                         ClearPlaylist();
                     } else if (PlayerMode == 'all') {
                         CurrentMusicIndex = 0;
@@ -135,7 +134,7 @@ PlayerEventEmitter.on('change_music', Play);
 
 function GetNowPlaying() {
     now_playing = '```md\n# Now Playing [Mode: Repeat ' + PlayerMode + ']\n';
-    now_playing += '[' + (CurrentMusicIndex + 1).toString() + ']' + CurrentPlaylist[CurrentMusicIndex].title + '\n```';
+    now_playing += '[' + (CurrentMusicIndex + 1).toString() + '] ' + CurrentPlaylist[CurrentMusicIndex].title + '\n```';
     return now_playing;
 }
 
@@ -368,7 +367,7 @@ function Process(Message, Args) {
         case MusicCommands.now.cmd: // shows currently playing song
             {
                 if (!CurrentPlaylist[CurrentMusicIndex]) {
-                    Message.channel.send(':negative_squared_cross_mark: No songs playing :negative_squared_cross_mark:');
+                    Message.channel.send(':negative_squared_cross_mark: No songs playing from a playlist :negative_squared_cross_mark:');
                     return;
                 }
                 Message.channel.send(GetNowPlaying());
