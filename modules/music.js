@@ -80,6 +80,9 @@ function JoinVoiceChannel(Message) {
 function LeaveVoiceChannel(Message) {
     if (ConnectedVoiceChannel) {
         if (ConnectedVoiceChannel == Message.member.voiceChannel) {
+            if (CurrentDispatcher) {
+                CurrentDispatcher.end('skipping');
+            }
             ConnectedVoiceChannel.leave();
             ConnectedVoiceChannel = null;
         } else {
@@ -92,64 +95,65 @@ function LeaveVoiceChannel(Message) {
 
 function ClearPlaylist() {
     CurrentPlaylist = [];
+    CurrentMusicIndex = null;
 }
 
 function Play() {
-    const stream = YTDL(CurrentPlaylist[CurrentMusicIndex].url, LoadOptions);
-    dispatcher = ConnectedVoiceChannel.connection.playStream(stream, StreamOptions);
-    CurrentDispatcher = dispatcher;
-    dispatcher.on('end', function (reason) {
-        if (reason == 'skipping') {
-            CurrentDispatcher = null;
-            return;
-        }
-
-        if (PlayerMode != 'one') {
-            CurrentMusicIndex += 1;
-        }
-        if (CurrentPlaylist[CurrentMusicIndex]) {
-            PlayerEventEmitter.emit('change_music');
-        } else {
-            if (PlayerMode == 'none' || PlayerMode == 'one') {
+    if (ConnectedVoiceChannel && (CurrentMusicIndex != null)) {
+        const stream = YTDL(CurrentPlaylist[CurrentMusicIndex].url, LoadOptions);
+        dispatcher = ConnectedVoiceChannel.connection.playStream(stream, StreamOptions);
+        CurrentDispatcher = dispatcher;
+        dispatcher.on('end', function (reason) {
+            if (reason == 'skipping') {
                 CurrentDispatcher = null;
-                CurrentMusicIndex = null;
-                ClearPlaylist();
-            } else if (PlayerMode == 'all') {
-                CurrentMusicIndex = 0;
-                PlayerEventEmitter.emit('change_music');
+                return;
             }
-        }
-    });
+
+            if (CurrentMusicIndex) {
+                if (PlayerMode != 'one') {
+                    CurrentMusicIndex += 1;
+                }
+                if (CurrentPlaylist[CurrentMusicIndex]) {
+                    PlayerEventEmitter.emit('change_music');
+                } else {
+                    if (PlayerMode == 'none' || PlayerMode == 'one') {
+                        CurrentDispatcher = null;
+                        CurrentMusicIndex = null;
+                        ClearPlaylist();
+                    } else if (PlayerMode == 'all') {
+                        CurrentMusicIndex = 0;
+                        PlayerEventEmitter.emit('change_music');
+                    }
+                }
+            }
+        });
+        return true;
+    }
+    return false;
 }
 PlayerEventEmitter.on('change_music', Play);
 
 function GetNowPlaying() {
     now_playing = '```md\n# Now Playing [Mode: Repeat ' + PlayerMode + ']\n';
-    now_playing += CurrentPlaylist[CurrentMusicIndex].title + '\n```';
+    now_playing += '[' + (CurrentMusicIndex + 1).toString() + ']' + CurrentPlaylist[CurrentMusicIndex].title + '\n```';
     return now_playing;
 }
 
 function Pause() {
     if (CurrentDispatcher) {
-        if (CurrentDispatcher.paused) {
-            // already paused
-        } else {
-            CurrentDispatcher.pause();
-        }
-        return true;
-    } else {
-        return false;
+        result = (CurrentDispatcher.paused == false);
+        CurrentDispatcher.pause();
+        return result;
     }
 }
 
 function Resume() {
     if (CurrentDispatcher) {
-        if (CurrentDispatcher.paused) {
-            CurrentDispatcher.resume();
-        }
-        return true;
+        result = (CurrentDispatcher.paused == true);
+        CurrentDispatcher.resume();
+        return result;
     } else {
-        return false;
+        return Play();
     }
 }
 
@@ -183,6 +187,8 @@ function Process(Message, Args) {
                         Message.channel.send(':arrow_forward: Player resumed!');
                     }
                     return;
+                } else if (!ytlink && CurrentPlaylist.length == 0) {
+                    Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
                 }
 
                 if (ytlink[0] == '<') {
@@ -248,44 +254,62 @@ function Process(Message, Args) {
 
         case MusicCommands.skipf.cmd: // skip the player forwards
             {
-                ++CurrentMusicIndex;
-                if (CurrentMusicIndex > (CurrentPlaylist.length - 1)) {
-                    CurrentMusicIndex = 0;
+                if (CurrentMusicIndex!=null) {
+                    ++CurrentMusicIndex;
+                    if (CurrentMusicIndex > (CurrentPlaylist.length - 1)) {
+                        CurrentMusicIndex = 0;
+                    }
+                    if (CurrentDispatcher) {
+                        CurrentDispatcher.end('skipping');
+                    }
+                    Play();
+                    Message.channel.send(GetNowPlaying());
+                } else {
+                    Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
                 }
-                CurrentDispatcher.end('skipping');
-                Play();
-                Message.channel.send(GetNowPlaying());
             } break;
 
         case MusicCommands.skipb.cmd: // skip the player backwards
             {
-                --CurrentMusicIndex;
-                if (CurrentMusicIndex < 0) {
-                    CurrentMusicIndex = CurrentPlaylist.length - 1;
+                if (CurrentMusicIndex!=null) {
+                    --CurrentMusicIndex;
+                    if (CurrentMusicIndex < 0) {
+                        CurrentMusicIndex = CurrentPlaylist.length - 1;
+                    }
+                    if (CurrentDispatcher) {
+                        CurrentDispatcher.end('skipping');
+                    }
+                    Play();
+                    Message.channel.send(GetNowPlaying());
+                } else {
+                    Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
                 }
-                CurrentDispatcher.end('skipping');
-                Play();
-                Message.channel.send(GetNowPlaying());
             } break;
 
         case MusicCommands.seek.cmd: // seek at given index
             {
-                if (Args[2]) {
-                    index = parseInt(Args[2]);
-                    if (index == NaN) {
-                        Message.reply('please specify an index from 1 to ' + CurrentPlaylist.length.toString());
-                    } else {
-                        if ((index < 1) || (index > CurrentPlaylist.length)) {
-                            Message.reply('index must range from 1 to ' + CurrentPlaylist.length.toString());
+                if (CurrentMusicIndex!=null) {
+                    if (Args[2]) {
+                        index = parseInt(Args[2]);
+                        if (index == NaN) {
+                            Message.reply('please specify an index from 1 to ' + CurrentPlaylist.length.toString());
                         } else {
-                            CurrentMusicIndex = index - 1;
-                            CurrentDispatcher.end('skipping');
-                            Play();
-                            Message.channel.send(GetNowPlaying());
+                            if ((index < 1) || (index > CurrentPlaylist.length)) {
+                                Message.reply('index must range from 1 to ' + CurrentPlaylist.length.toString());
+                            } else {
+                                CurrentMusicIndex = index - 1;
+                                if (CurrentDispatcher) {
+                                    CurrentDispatcher.end('skipping');
+                                }
+                                Play();
+                                Message.channel.send(GetNowPlaying());
+                            }
                         }
+                    } else {
+                        Message.reply('please specify an index from 0 to ' + (CurrentPlaylist.length - 1).toString());
                     }
                 } else {
-                    Message.reply('please specify an index from 0 to ' + (CurrentPlaylist.length - 1).toString());
+                    Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
                 }
             } break;
 
@@ -305,13 +329,38 @@ function Process(Message, Args) {
         case MusicCommands.list.cmd: // shows all music in currently playing playlist
             {
                 if (CurrentPlaylist.length == 0) {
-                    Message.channel.send(':negative_squared_cross_mark: No songs playing :negative_squared_cross_mark:');
+                    Message.channel.send(':negative_squared_cross_mark: No songs present in the playlist :negative_squared_cross_mark:');
                     return;
                 }
-                music_list = '```md\n# Music List [Mode: Repeat ' + PlayerMode + ']\n';
-                CurrentPlaylist.forEach(m => {
-                    music_list += '- ' + m.title + '\n';
-                });
+                page = 0;
+                last_page = (Math.ceil(CurrentPlaylist.length / 5)).toString();
+                if (Args[2]) {
+                    given_number = parseInt(Args[2]);
+                    if (given_number == NaN) {
+                        Message.reply('page number must be from 1 to ' + last_page);
+                        return;
+                    } else {
+                        if ((given_number < 1) || (given_number > parseInt(last_page))) {
+                            Message.reply('page number must start from 1 to ' + last_page);
+                            return;
+                        } else {
+                            page = given_number - 1;
+                        }
+                    }
+                }
+                if (page == NaN) return;
+
+                start_index = page * 5;
+                end_index = start_index + 5;
+                if (end_index > CurrentPlaylist.length) {
+                    end_index = CurrentPlaylist.length;
+                }
+                music_list = '```md\n# Music List [Mode: Repeat ' + PlayerMode + '] & [Page: ' +
+                    (page + 1).toString() + ' of ' + last_page + ']\n';
+
+                for (index = start_index; index < end_index; ++index) {
+                    music_list += '- [' + (index + 1).toString() + '] ' + CurrentPlaylist[index].title + '\n';
+                }
                 music_list += '```';
                 Message.channel.send(music_list);
             } break;
