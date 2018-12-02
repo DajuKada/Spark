@@ -1,6 +1,8 @@
 const DISCORD = require('discord.js');
 const YTDL = require('ytdl-core');
 const EVENTS = require('events');
+const FS = require('fs');
+const DATA_PATH = 'data/';
 
 const LoadOptions = {
   quality: 'highestaudio',
@@ -18,6 +20,7 @@ var CurrentMusicIndex = null;
 var CurrentDispatcher = null;
 var PlayerEventEmitter = new EVENTS.EventEmitter();
 var PlayerMode = 'none';
+var AllPlaylistsAvailable = [];
 
 const MusicCommands = {
   "join": {
@@ -55,6 +58,10 @@ const MusicCommands = {
   "playlists": {
     "cmd": "playlists",
     "desc": "Displays all saved playlists"
+  },
+  "rmvplaylist": {
+    "cmd": "remove-playlist",
+    "desc": "Removes given playlist if present in the playlist record"
   },
   "next": {
     "cmd": "next",
@@ -97,6 +104,7 @@ function GetCompiledCommandListWithDesc() {
   all_music_cmds += MusicCommands.clear.cmd + " = '" + MusicCommands.clear.desc + "'\n";
   all_music_cmds += MusicCommands.load.cmd + " = '" + MusicCommands.load.desc + "'\n";
   all_music_cmds += MusicCommands.playlists.cmd + " = '" + MusicCommands.playlists.desc + "'\n";
+  all_music_cmds += MusicCommands.rmvplaylist.cmd + " = '" + MusicCommands.rmvplaylist.desc + "'\n";
   all_music_cmds += MusicCommands.next.cmd + " = '" + MusicCommands.next.desc + "'\n";
   all_music_cmds += MusicCommands.previous.cmd + " = '" + MusicCommands.previous.desc + "'\n";
   all_music_cmds += MusicCommands.seek.cmd + " = '" + MusicCommands.seek.desc + "'\n";
@@ -125,6 +133,14 @@ function JoinVoiceChannel(Message) {
     if (voiceChannel.joinable) {
       voiceChannel.join();
       ConnectedVoiceChannel = voiceChannel;
+      members = ConnectedVoiceChannel.members;
+      for (let [snowflake, member] of members) {
+        if (member.user.bot) {
+          // don't add bot as music listeners
+        } else {
+          TotalConnectedUsers++;
+        }
+      }
     } else {
       Message.reply('I don\'t have permissions to join that voice channel');
     }
@@ -151,7 +167,7 @@ function LeaveVoiceChannel(Message) {
 }
 
 function LeaveVoiceChannelCheckUsers() {
-  if (TotalConnectedUsers == 0) {
+  if (TotalConnectedUsers === 0) {
     if (ConnectedVoiceChannel) {
       if (CurrentDispatcher) {
         CurrentDispatcher.end('skipping');
@@ -259,69 +275,98 @@ function PlayPrevious() {
   }
 }
 
+function AddPlayListToRecord(playlist_name) {
+  RemovePlaylistFromRecord(playlist_name);
+  AllPlaylistsAvailable.push(playlist_name);
+}
+
+function RemovePlaylistFromRecord(playlist_name) {
+  NewPlaylistAvailable = [];
+  removed = false;
+  for (playlist_index = 0; playlist_index < AllPlaylistsAvailable.length; ++playlist_index) {
+    if (playlist_name !== AllPlaylistsAvailable[playlist_index]) {
+      NewPlaylistAvailable.push(AllPlaylistsAvailable[playlist_index]);
+    } else {
+      removed = true;
+    }
+  }
+  AllPlaylistsAvailable = NewPlaylistAvailable;
+  return removed;
+}
+
 function Process(Message, Args) {
 
   firstArg = Args[1];
-  switch (firstArg) {
-    case MusicCommands.join.cmd: // join the voice channel that the caller is on and have permission
-      {
-        JoinVoiceChannel(Message);
+
+  if (firstArg == MusicCommands.join.cmd) { // join the voice channel that the caller is on and have permission
+    JoinVoiceChannel(Message);
+    return;
+  } else if (firstArg == MusicCommands.leave.cmd) { // leave the voice channel if connected to one
+    LeaveVoiceChannel(Message);
+    return;
+  } else if (firstArg == MusicCommands.play.cmd) { // search for music in youtube or play the selected music from search result if -1
+    if (!ConnectedVoiceChannel) {
+      JoinVoiceChannel(Message);
+      if (!ConnectedVoiceChannel) {
+        return;
       }
-      break;
+    }
 
-    case MusicCommands.leave.cmd: // leave the voice channel if connected to one
-      {
-        LeaveVoiceChannel(Message);
+    // TODO(Zero): Search youtube for music
+    ytlink = Args[2];
+    if (!ytlink && (CurrentPlaylist.length > 0)) {
+      if (Resume()) {
+        Message.channel.send(':arrow_forward: Player resumed!');
       }
-      break;
+      return;
+    } else if (!ytlink && (CurrentPlaylist.length == 0)) {
+      Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
+      return;
+    }
 
-    case MusicCommands.play.cmd: // search for music in youtube or play the selected music from search result if -1
-      {
-        if (!ConnectedVoiceChannel) {
-          JoinVoiceChannel(Message);
-          if (!ConnectedVoiceChannel) {
-            return;
-          }
-        }
+    if (ytlink[0] == '<') {
+      ytlink = ytlink.substr(1, ytlink.length - 1);
+    }
 
-        // TODO(Zero): Search youtube for music
-        ytlink = Args[2];
-        if (!ytlink && (CurrentPlaylist.length > 0)) {
-          if (Resume()) {
-            Message.channel.send(':arrow_forward: Player resumed!');
-          }
-          return;
-        } else if (!ytlink && (CurrentPlaylist.length == 0)) {
-          Message.channel.send(':negative_squared_cross_mark: No music in the playlist, type **player play <music name>** to add music!');
-          return;
-        }
-
-        if (ytlink[0] == '<') {
-          ytlink = ytlink.substr(1, ytlink.length - 1);
-        }
-
-        if (YTDL.validateURL(ytlink)) {
-          YTDL.getInfo(ytlink, (err, info) => {
-            if (err) return console.log('Error in player play command!');
-            CurrentPlaylist.push({
-              title: info.title,
-              url: ytlink
-            });
-            if (CurrentPlaylist.length == 1) {
-              CurrentMusicIndex = 0;
-              Play();
-              Message.channel.send('```md\n# Playing \n' + CurrentPlaylist[0].title + '```');
-            } else {
-              Message.channel.send('```md\n# Added song \n' + CurrentPlaylist[CurrentPlaylist.length - 1].title + '```');
-            }
-          });
+    if (YTDL.validateURL(ytlink)) {
+      YTDL.getInfo(ytlink, (err, info) => {
+        if (err) return console.log('Error in player play command!');
+        CurrentPlaylist.push({
+          title: info.title,
+          url: ytlink
+        });
+        if (CurrentPlaylist.length == 1) {
+          CurrentMusicIndex = 0;
+          Play();
+          Message.channel.send('```md\n# Playing \n' + CurrentPlaylist[0].title + '```');
         } else {
-          Message.channel.send(':negative_squared_cross_mark: Error, youtube link is not accessible');
+          Message.channel.send('```md\n# Added song \n' + CurrentPlaylist[CurrentPlaylist.length - 1].title + '```');
         }
+      });
+    } else {
+      Message.channel.send(':negative_squared_cross_mark: Error, youtube link is not accessible');
+    }
+    return;
+  }
 
-      }
-      break;
+  if (!ConnectedVoiceChannel) {
+    Message.reply('I am not connected to a voice channel, please use **player play [song name]** OR **player join** command so I can join the voice channel');
+    return;
+  }
 
+  if (Message.member.voiceChannel) {
+    if (Message.member.voiceChannel != ConnectedVoiceChannel) {
+      Message.reply('I am already connected to the voice channel: :speaker:' +
+        ConnectedVoiceChannel.name +
+        '. Please connect to this channel.');
+      return;
+    }
+  } else {
+    Message.reply('please connect to the voice channel: :speaker:' + ConnectedVoiceChannel.name);
+    return;
+  }
+
+  switch (firstArg) {
     case MusicCommands.pause.cmd: // pause the player if playing
       {
         if (Pause()) {
@@ -340,30 +385,133 @@ function Process(Message, Args) {
 
     case MusicCommands.save.cmd: // save the current playing list
       {
-
+        // TODO: This has not been checked, remove this tag
+        if (CurrentPlaylist.length != 0) {
+          playlist_name = Args[2];
+          if (playlist_name) {
+            // NOTE: Both music name and music link are saved in file,
+            // so no need of loading music names when playlist is being loaded
+            FS.writeFileSync(DATA_PATH + playlist_name + '.json', JSON.stringify(CurrentPlaylist));
+            AddPlayListToRecord(playlist_name);
+            Message.channel.send(':inbox_tray: **' + playlist_name + '** sucessfully added to the record!');
+          } else {
+            Message.reply('specify a playlist name:: **player save <playlist_name>**');
+            return;
+          }
+        } else {
+          Message.reply('current playlist is empty!');
+          return;
+        }
       }
       break;
 
     case MusicCommands.clear.cmd: // clear the musics in the current playlist
       {
-        if (ConnectedVoiceChannel && Message.member.voiceChannel == ConnectedVoiceChannel) {
-          ClearPlaylist();
-          Message.channel.send(':ballot_box_with_check: Current Playlist has been cleared!');
-        } else {
-          Message.reply('you are not connected to any voice channels!');
-        }
+        ClearPlaylist();
+        Message.channel.send(':ballot_box_with_check: Current Playlist has been cleared!');
       }
       break;
 
     case MusicCommands.load.cmd: // load the saved playlist if present
       {
-
+        // TODO: check this, remove this tag
+        playlist_name = Args[2];
+        if (playlist_name) {
+          // NOTE: Both music name and music link should be saved in the file
+          for (playlist_index = 0; playlist_index < AllPlaylistsAvailable.length; ++playlist_index) {
+            if (playlist_name === AllPlaylistsAvailable[playlist_index]) {
+              if (FS.existsSync(DATA_PATH + playlist_name + '.json')) {
+                NewPlaylist = JSON.parse(FS.readFileSync(DATA_PATH + playlist_name + '.json', 'utf-8'));
+                if (NewPlaylist.length == 0) {
+                  Message.reply('this playlist seems to be empty!');
+                  RemovePlaylistFromRecord(playlist_name);
+                  return;
+                } else {
+                  ClearPlaylist();
+                  CurrentPlaylist = NewPlaylist;
+                  CurrentMusicIndex = 0;
+                  if (CurrentDispatcher) {
+                    CurrentDispatcher.end('skipping');
+                  }
+                  Play();
+                  Message.channel.send(':arrow_forward: **' + playlist_name + '** is now playing!');
+                  return;
+                }
+              } else {
+                Message.reply('seems like the playlist is lost! Please contact managers!');
+                RemovePlaylistFromRecord(playlist_name);
+                return;
+              }
+            }
+          }
+          Message.reply('the playlist you specified doesn\'t exist!');
+          return;
+        } else {
+          Message.reply('specify a playlist name:: **player load <playlist_name>**');
+          return;
+        }
       }
       break;
 
     case MusicCommands.playlists.cmd: // display all saved playlist
       {
+        // TODO: check this and remove the tag
+        if (AllPlaylistsAvailable.length == 0) {
+          Message.channel.send(':negative_squared_cross_mark: No playlist in the record :negative_squared_cross_mark:');
+          return;
+        }
+        page = 0;
+        last_page = (Math.ceil(AllPlaylistsAvailable.length / 10)).toString();
+        if (Args[2]) {
+          given_number = parseInt(Args[2]);
+          if (given_number == NaN) {
+            Message.reply('page number must be from 1 to ' + last_page);
+            return;
+          } else {
+            if ((given_number < 1) || (given_number > parseInt(last_page))) {
+              Message.reply('page number must start from 1 to ' + last_page);
+              return;
+            } else {
+              page = given_number - 1;
+            }
+          }
+        }
+        if (page == NaN) return;
 
+        start_index = page * 10;
+        end_index = start_index + 10;
+        if (end_index > AllPlaylistsAvailable.length) {
+          end_index = AllPlaylistsAvailable.length;
+        }
+
+        total_playlist_nums = AllPlaylistsAvailable.length;
+        playlist_list = '```md\n# [Total Playlist:' + total_playlist_nums + '] & [Page: ' +
+        (page + 1).toString() + ' of ' + last_page + ']\n';
+
+        for (index = start_index; index < end_index; ++index) {
+          playlist_list += '- [' + (index + 1).toString() + '] ' + AllPlaylistsAvailable[index] + '\n';
+        }
+        playlist_list += '```';
+        Message.channel.send(playlist_list);
+      }
+      break;
+
+    case MusicCommands.rmvplaylist.cmd: // removes specified playlist if present in the record
+      {
+        // TODO: check this and remove this tag
+        playlist_name = Args[2];
+        if (playlist_name) {
+          if (RemovePlaylistFromRecord(playlist_name)) {
+            Message.channel.send(':warning: ' + playlist_name + ' has been removed!');
+            return;
+          } else {
+            Message.reply('No playlist with the name `' + playlist_name + '` exists!');
+            return;
+          }
+        } else {
+          Message.reply('please specify playlist to remove! Type **player remove-playlist <playlist name>**');
+          return;
+        }
       }
       break;
 
@@ -581,7 +729,13 @@ function HelpMessage(Args) {
       case MusicCommands.playlists.cmd:
         music_cmd_desc += MusicCommands.playlists.cmd + '\n';
         music_cmd_desc += '- Description: ' + MusicCommands.playlists.desc + '\n';
-        music_cmd_desc += '- Syntax: **player playlists*** \n```';
+        music_cmd_desc += '- Syntax: **player playlists** \n```';
+        return music_cmd_desc;
+
+      case MusicCommands.rmvplaylist.cmd:
+        music_cmd_desc += MusicCommands.rmvplaylist.cmd + '\n';
+        music_cmd_desc += '- Description: ' + MusicCommands.rmvplaylist.desc + '\n';
+        music_cmd_desc += '- Syntax: **player remove-playlist <playlist name>** \n ```';
         return music_cmd_desc;
 
       case MusicCommands.next.cmd:
@@ -636,30 +790,36 @@ function HelpMessage(Args) {
 }
 
 function Close() {
+  // TODO: this needs check, remove this tag
+  if (AllPlaylistsAvailable.length != 0) {
+    FS.writeFileSync(DATA_PATH + '_available_playlist.spark', JSON.stringify(AllPlaylistsAvailable));
+  }
   return true;
 }
 
 module.exports = {
 
   Load: function(Register) {
+    // TODO: check this and remove this tag
+    if (FS.existsSync(DATA_PATH + '_available_playlist.spark')) {
+      AllPlaylistsAvailable = JSON.parse(FS.readFileSync(DATA_PATH + '_available_playlist.spark', 'utf-8'));
+    }
     Register('player', Process, Close, HelpMessage, 'Control the music player of the server');
   },
 
   UserJoinedVoiceChannel: function(User, VoiceChannel) {
-    if (User.bot) return;
-    if (ConnectedVoiceChannel != null) {
-      if (VoiceChannel.id == ConnectedVoiceChannel.id) {
+    if (ConnectedVoiceChannel) {
+      if (VoiceChannel == ConnectedVoiceChannel) {
         TotalConnectedUsers++;
       }
     }
   },
 
   UserLeftVoiceChannel: function(User, LeftVoiceChannel) {
-    if (User.bot) return;
-    if (ConnectedVoiceChannel != null) {
-      if (LeftVoiceChannel.id == ConnectedVoiceChannel.id) {
+    if (ConnectedVoiceChannel) {
+      if (LeftVoiceChannel == ConnectedVoiceChannel) {
         TotalConnectedUsers--;
-        if (TotalConnectedUsers == 0) {
+        if (TotalConnectedUsers === 0) {
           Pause();
           setTimeout(LeaveVoiceChannelCheckUsers, 60 * 1000); // Leave the voice channel after a minute when there are no users left
         }

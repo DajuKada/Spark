@@ -26,6 +26,7 @@
     "sudo_user": "sudo_role"
 }
 ```
+- Create a directory named `data` in the root directory and leave it empty
 
 
 ## Installing
