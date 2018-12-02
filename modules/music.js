@@ -2,6 +2,9 @@ const DISCORD = require('discord.js');
 const YTDL = require('ytdl-core');
 const EVENTS = require('events');
 const FS = require('fs');
+const YOUTUBE = require('simple-youtube-api');
+const VIDEO_SEARCH = new YOUTUBE(JSON.parse(FS.readFileSync('config/music.json', 'utf-8')).api_key);
+
 const DATA_PATH = 'data/';
 
 const LoadOptions = {
@@ -21,6 +24,7 @@ var CurrentDispatcher = null;
 var PlayerEventEmitter = new EVENTS.EventEmitter();
 var PlayerMode = 'none';
 var AllPlaylistsAvailable = [];
+var SearchResults = [];
 
 const MusicCommands = {
   "join": {
@@ -34,6 +38,10 @@ const MusicCommands = {
   "play": {
     "cmd": "play",
     "desc": "Play music by loading from youtube"
+  },
+  "select": {
+    "cmd": "select",
+    "desc": "Select music from the search results"
   },
   "pause": {
     "cmd": "pause",
@@ -98,6 +106,7 @@ function GetCompiledCommandListWithDesc() {
   all_music_cmds += MusicCommands.join.cmd + " = '" + MusicCommands.join.desc + "'\n";
   all_music_cmds += MusicCommands.leave.cmd + " = '" + MusicCommands.leave.desc + "'\n";
   all_music_cmds += MusicCommands.play.cmd + " = '" + MusicCommands.play.desc + "'\n";
+  all_music_cmds += MusicCommands.select.cmd + " = '" + MusicCommands.select.desc + "'\n";
   all_music_cmds += MusicCommands.pause.cmd + " = '" + MusicCommands.pause.desc + "'\n";
   all_music_cmds += MusicCommands.resume.cmd + " = '" + MusicCommands.resume.desc + "'\n";
   all_music_cmds += MusicCommands.save.cmd + " = '" + MusicCommands.save.desc + "'\n";
@@ -139,8 +148,8 @@ function JoinVoiceChannel(Message) {
           // don't add bot as music listeners
         } else {
           TotalConnectedUsers++;
+        }
       }
-    }
     } else {
       Message.reply('I don\'t have permissions to join that voice channel');
     }
@@ -275,6 +284,32 @@ function PlayPrevious() {
   }
 }
 
+function PushLinkToPlaylist(Message, ytlink) {
+  if (YTDL.validateURL(ytlink)) {
+    YTDL.getInfo(ytlink, (err, info) => {
+      if (err) return console.log('Error in player play command!');
+      CurrentPlaylist.push({
+        title: info.title,
+        url: ytlink
+      });
+      if (CurrentPlaylist.length == 1) {
+        CurrentMusicIndex = 0;
+        Play();
+        Message.channel.send('```md\n# Playing \n' + CurrentPlaylist[0].title + '```');
+      } else {
+        Message.channel.send('```md\n# Added song \n' + CurrentPlaylist[CurrentPlaylist.length - 1].title + '```');
+      }
+    });
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function ClearSearchResults() {
+  SearchResults = [];
+}
+
 function AddPlayListToRecord(playlist_name) {
   RemovePlaylistFromRecord(playlist_name);
   AllPlaylistsAvailable.push(playlist_name);
@@ -328,23 +363,23 @@ function Process(Message, Args) {
       ytlink = ytlink.substr(1, ytlink.length - 1);
     }
 
-    if (YTDL.validateURL(ytlink)) {
-      YTDL.getInfo(ytlink, (err, info) => {
-        if (err) return console.log('Error in player play command!');
-        CurrentPlaylist.push({
-          title: info.title,
-          url: ytlink
-        });
-        if (CurrentPlaylist.length == 1) {
-          CurrentMusicIndex = 0;
-          Play();
-          Message.channel.send('```md\n# Playing \n' + CurrentPlaylist[0].title + '```');
-        } else {
-          Message.channel.send('```md\n# Added song \n' + CurrentPlaylist[CurrentPlaylist.length - 1].title + '```');
-        }
-      });
+    if (PushLinkToPlaylist(Message, ytlink)) {
+      // sucessfully played or added music
     } else {
-      Message.channel.send(':negative_squared_cross_mark: Error, youtube link is not accessible');
+      video_name = Message.content.substr('.player play '.length);
+      VIDEO_SEARCH.searchVideos(video_name, 5)
+        .then(results => {
+          result_message = '```md\n# Search results for "' + video_name + '":\n';
+          for (result = 0; result < results.length; ++result) {
+            result_message += '- [' + (result + 1).toString() + '] ' + results[result].title + '\n';
+          }
+          result_message += '```\n';
+          result_message += '`Type **player select <index>** to select desired result.`';
+          Message.channel.send(result_message);
+          SearchResults = results;
+          setTimeout(ClearSearchResults, 2 * 60 * 1000); // clear search results after two minutes
+        })
+        .catch(console.log);
     }
     return;
   }
@@ -367,6 +402,35 @@ function Process(Message, Args) {
   }
 
   switch (firstArg) {
+    case MusicCommands.select.cmd: // select a music from search results
+      {
+        if (SearchResults.length == 0) {
+          Message.reply('search result empty, please type **player play [name of music]** for searching for music.');
+          return;
+        }
+
+        if (Args[2]) {
+          index = parseInt(Args[2]);
+          if (index == NaN) {
+            Message.reply('index must be number from 1 to ' + SearchResults.length);
+            return;
+          } else {
+            if (index < 1 || index > SearchResults.length) {
+              Message.reply('index must be between 1 to ' + SearchResults.length);
+              return;
+            } else {
+              selected_music = SearchResults[index - 1];
+              PushLinkToPlaylist(Message, selected_music.shortURL);
+              ClearSearchResults();
+              return;
+            }
+          }
+        } else {
+          Message.reply('please specify index from 1 to ' + SearchResults.length);
+          return;
+        }
+      }
+
     case MusicCommands.pause.cmd: // pause the player if playing
       {
         if (Pause()) {
@@ -693,6 +757,12 @@ function HelpMessage(Args) {
         music_cmd_desc += MusicCommands.play.cmd + '\n';
         music_cmd_desc += '- Description: ' + MusicCommands.play.desc + '\n';
         music_cmd_desc += '- Syntax: **player play [link | name of music]** \n```';
+        return music_cmd_desc;
+
+      case MusicCommands.select.cmd:
+        music_cmd_desc += MusicCommands.select.cmd + '\n';
+        music_cmd_desc += '- Description: ' + MusicCommands.select.desc + '\n';
+        music_cmd_desc += '- Syntax: **player select <index of the result>** \n```';
         return music_cmd_desc;
 
       case MusicCommands.pause.cmd:
