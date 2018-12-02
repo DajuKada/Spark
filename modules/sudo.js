@@ -27,7 +27,7 @@ function ProcessSudo(Message, Args) {
                 channel = Message.client.channels.find(val => val.id == AnnouncementChannel);
                 if (channel) {
                     announcement = Message.content.substr('.sudo announce '.length);
-                    //announcement = '@everyone \n' + announcement;
+                    announcement = '@everyone \n' + announcement;
                     channel.send(announcement);
                     Message.delete();
                 }
@@ -79,7 +79,7 @@ function ProcessManageMessage(Message, Args) {
     channel = Message.client.channels.find(val => val.id == ManagementChannel);
     if (channel) {
         mention = 'manager, ';
-        //mention = '<@&' + Message.guild.roles.find(m=> m.name == SudoUser).id + '> ';
+        mention = '<@&' + Message.guild.roles.find(m=> m.name == SudoUser).id + '> ';
         channel.send(mention + 'User::' + username + 'has sent a message::\n' + message);
         Message.author.send('Your message has been sucessfully been sent!');
         Message.delete();
