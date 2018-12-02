@@ -139,8 +139,8 @@ function JoinVoiceChannel(Message) {
           // don't add bot as music listeners
         } else {
           TotalConnectedUsers++;
-        }
       }
+    }
     } else {
       Message.reply('I don\'t have permissions to join that voice channel');
     }
@@ -408,6 +408,9 @@ function Process(Message, Args) {
     case MusicCommands.clear.cmd: // clear the musics in the current playlist
       {
         ClearPlaylist();
+        if (CurrentDispatcher) {
+          CurrentDispatcher.end('skipping');
+        }
         Message.channel.send(':ballot_box_with_check: Current Playlist has been cleared!');
       }
       break;
@@ -792,6 +795,7 @@ function HelpMessage(Args) {
 function Close() {
   // TODO: this needs check, remove this tag
   if (AllPlaylistsAvailable.length != 0) {
+    console.log(JSON.stringify(AllPlaylistsAvailable)); // TODO: remove this tag
     FS.writeFileSync(DATA_PATH + '_available_playlist.spark', JSON.stringify(AllPlaylistsAvailable));
   }
   return true;
@@ -802,6 +806,7 @@ module.exports = {
   Load: function(Register) {
     // TODO: check this and remove this tag
     if (FS.existsSync(DATA_PATH + '_available_playlist.spark')) {
+      console.log(FS.readFileSync(DATA_PATH + '_available_playlist.spark')); // TODO: remove this tag
       AllPlaylistsAvailable = JSON.parse(FS.readFileSync(DATA_PATH + '_available_playlist.spark', 'utf-8'));
     }
     Register('player', Process, Close, HelpMessage, 'Control the music player of the server');
