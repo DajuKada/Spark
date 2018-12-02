@@ -385,7 +385,6 @@ function Process(Message, Args) {
 
     case MusicCommands.save.cmd: // save the current playing list
       {
-        // TODO: This has not been checked, remove this tag
         if (CurrentPlaylist.length != 0) {
           playlist_name = Args[2];
           if (playlist_name) {
@@ -417,7 +416,6 @@ function Process(Message, Args) {
 
     case MusicCommands.load.cmd: // load the saved playlist if present
       {
-        // TODO: check this, remove this tag
         playlist_name = Args[2];
         if (playlist_name) {
           // NOTE: Both music name and music link should be saved in the file
@@ -458,7 +456,6 @@ function Process(Message, Args) {
 
     case MusicCommands.playlists.cmd: // display all saved playlist
       {
-        // TODO: check this and remove the tag
         if (AllPlaylistsAvailable.length == 0) {
           Message.channel.send(':negative_squared_cross_mark: No playlist in the record :negative_squared_cross_mark:');
           return;
@@ -501,7 +498,6 @@ function Process(Message, Args) {
 
     case MusicCommands.rmvplaylist.cmd: // removes specified playlist if present in the record
       {
-        // TODO: check this and remove this tag
         playlist_name = Args[2];
         if (playlist_name) {
           if (RemovePlaylistFromRecord(playlist_name)) {
@@ -793,9 +789,7 @@ function HelpMessage(Args) {
 }
 
 function Close() {
-  // TODO: this needs check, remove this tag
   if (AllPlaylistsAvailable.length != 0) {
-    console.log(JSON.stringify(AllPlaylistsAvailable)); // TODO: remove this tag
     FS.writeFileSync(DATA_PATH + '_available_playlist.spark', JSON.stringify(AllPlaylistsAvailable));
   }
   return true;
@@ -804,9 +798,7 @@ function Close() {
 module.exports = {
 
   Load: function(Register) {
-    // TODO: check this and remove this tag
     if (FS.existsSync(DATA_PATH + '_available_playlist.spark')) {
-      console.log(FS.readFileSync(DATA_PATH + '_available_playlist.spark')); // TODO: remove this tag
       AllPlaylistsAvailable = JSON.parse(FS.readFileSync(DATA_PATH + '_available_playlist.spark', 'utf-8'));
     }
     Register('player', Process, Close, HelpMessage, 'Control the music player of the server');
