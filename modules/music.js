@@ -125,19 +125,6 @@ function JoinVoiceChannel(Message) {
     if (voiceChannel.joinable) {
       voiceChannel.join();
       ConnectedVoiceChannel = voiceChannel;
-
-      allMembers = ConnectedVoiceChannel.members.array();
-      members.forEach(member => {
-        // TODO: haven't checked after this change is made
-        // TODO: it added all the members in the voice channel(both bots and real people) before
-        if(member.bot) {
-          // don't count bots as music listeners
-        } else {
-          TotalConnectedUsers++;
-        }
-      });
-
-      console.log('Total user when joined ' + TotalConnectedUsers.toString()); // TODO: remove this tag
     } else {
       Message.reply('I don\'t have permissions to join that voice channel');
     }
@@ -164,10 +151,9 @@ function LeaveVoiceChannel(Message) {
 }
 
 function LeaveVoiceChannelCheckUsers() {
-  console.log('Left voice channel'); // TODO: remove this tag
-  if(TotalConnectedUsers == 0) {
-    if(ConnectedVoiceChannel) {
-      if(CurrentDispatcher) {
+  if (TotalConnectedUsers == 0) {
+    if (ConnectedVoiceChannel) {
+      if (CurrentDispatcher) {
         CurrentDispatcher.end('skipping');
       }
       ConnectedVoiceChannel.leave();
@@ -660,20 +646,20 @@ module.exports = {
   },
 
   UserJoinedVoiceChannel: function(User, VoiceChannel) {
+    if (User.bot) return;
     if (ConnectedVoiceChannel != null) {
       if (VoiceChannel.id == ConnectedVoiceChannel.id) {
         TotalConnectedUsers++;
-        console.log('Total User:: ' + TotalConnectedUsers.toString()); // TODO: remove this tag
       }
     }
   },
 
   UserLeftVoiceChannel: function(User, LeftVoiceChannel) {
+    if (User.bot) return;
     if (ConnectedVoiceChannel != null) {
       if (LeftVoiceChannel.id == ConnectedVoiceChannel.id) {
         TotalConnectedUsers--;
-        if(TotalConnectedUsers == 0) {
-          console.log('All users left, player paused'); // TODO: remove this tag
+        if (TotalConnectedUsers == 0) {
           Pause();
           setTimeout(LeaveVoiceChannelCheckUsers, 60 * 1000); // Leave the voice channel after a minute when there are no users left
         }

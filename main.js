@@ -78,9 +78,6 @@ BOT.on('guildAddMember', member => {
 });
 
 BOT.on('voiceStateUpdate', (oldMember, newMember) => {
-
-  if (oldMember.bot) return;
-
   let newUserChannel = newMember.voiceChannel;
   let oldUserChannel = oldMember.voiceChannel;
 
