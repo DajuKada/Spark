@@ -858,10 +858,14 @@ function HelpMessage(Args) {
   }
 }
 
-function Close() {
+function Save() {
   if (AllPlaylistsAvailable.length != 0) {
     FS.writeFileSync(DATA_PATH + '_available_playlist.spark', JSON.stringify(AllPlaylistsAvailable));
   }
+}
+
+function Close() {
+  Save();
   return true;
 }
 
@@ -871,6 +875,7 @@ module.exports = {
     if (FS.existsSync(DATA_PATH + '_available_playlist.spark')) {
       AllPlaylistsAvailable = JSON.parse(FS.readFileSync(DATA_PATH + '_available_playlist.spark', 'utf-8'));
     }
+    setInterval(Save, 30 * 60 * 1000); // Save every 30 minute
     Register('player', Process, Close, HelpMessage, 'Control the music player of the server');
   },
 
