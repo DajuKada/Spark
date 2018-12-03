@@ -26,6 +26,12 @@
     "sudo_user": "sudo_role"
 }
 ```
+- Create a file named `music.json` still in the `config` directory and add the following
+```json
+{
+    "api_key": "your_google_search_api_key"
+}
+```
 - Create a directory named `data` in the root directory and leave it empty
 
 
