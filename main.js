@@ -61,6 +61,16 @@ BOT.on('ready', () => {
   CORE.StartUp(DiscordParms.prefix, DiscordParms.notification);
   StartUp();
 
+  // Set bot activity
+  BOT.user.setPresence({
+      game: {
+        name: 'music Type ?help'
+      },
+      status: 'online'
+    })
+    .then(console.log)
+    .catch(console.error);
+
   // Bot is ready
   console.log('Prefix for the command set as : ' + DiscordParms.prefix);
   console.log('Notification channel has been set as "' +
@@ -74,7 +84,9 @@ BOT.on('ready', () => {
 BOT.on('guildAddMember', member => {
   member.send('Welcome to the server,' + `${member}` +
     '. Please goto #welcome channel for more info on the server.' +
-    'Also you can call me any time with the command `!help` from #bot in the server! Enjoy!!');
+    "Also you can call me any time with the command `" +
+    DiscordParms.prefix +
+    "help` from #bot in the server! Enjoy!!");
 });
 
 BOT.on('voiceStateUpdate', (oldMember, newMember) => {

@@ -12,7 +12,7 @@ function ProcessBotCommand(Message) {
     var args = Message.content.substring(1).split(' ');
     // Help commands
     if (args[0] == 'help') {
-        let help_msg = 'Module could not be found. Type `!help` to get a list of all modules';
+        let help_msg = 'Module could not be found. Type `?help` to get a list of all modules';
         if (args[1]) {
             for (let i = 0; i < Modules.length; ++i) {
                 if (Modules[i].signature == args[1]) {
@@ -53,7 +53,7 @@ function GetStringOfModulesList() {
             module_string += m.signature + " = '" + m.description + "'\n";
         }
     });
-    module_string += '```\nType `!help <module_name>` to get help for specific module.';
+    module_string += '```\nType `?help <module_name>` to get help for specific module.';
     return module_string;
 }
 
