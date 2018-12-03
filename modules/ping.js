@@ -5,7 +5,7 @@ function Process(Message, Args) {
 }
 
 function HelpMessage(Args) {
-    return 'This is help for ping';
+    return '```md\n# ping\n Use this command to check my connection, I\'ll reply with **ping** if I can receive your message!\n```';
 }
 
 function Close() {
